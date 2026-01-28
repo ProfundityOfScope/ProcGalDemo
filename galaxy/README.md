@@ -2,7 +2,8 @@
 
 Spatial indexing system for efficiently rendering large-scale galaxy maps with dynamic level-of-detail.
 
-> **Note**: This version of the documentation was AI-generated based on code analysis and may not reflect all implementation details or recent changes. It will eventually be replaced with human-generated docs. Refer to the source code for authoritative information.
+> [!WARNING]
+> This version of the documentation was AI-generated based on code analysis and may not reflect all implementation details or recent changes. It will eventually be replaced with human-generated docs. Refer to the source code for authoritative information.
 
 ## What It Does
 

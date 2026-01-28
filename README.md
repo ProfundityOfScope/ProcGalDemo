@@ -3,7 +3,7 @@
 Two complementary systems for procedural galaxy creation and visualization.
 
 > [!WARNING]
-> **Note**: This version of the documentation was AI-generated based on code analysis and may not reflect all implementation details or recent changes. It will eventually be replaced with human-generated docs. Refer to the source code for authoritative information.
+> This version of the documentation was AI-generated based on code analysis and may not reflect all implementation details or recent changes. It will eventually be replaced with human-generated docs. Refer to the source code for authoritative information.
 
 ## Projects
 
