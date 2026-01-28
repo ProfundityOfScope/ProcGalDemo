@@ -1,6 +1,8 @@
 # Other stuff
 *.vscode
 *.DS_Store
+*.mp4
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
