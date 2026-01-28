@@ -1,6 +1,6 @@
 # Procedural Galaxy
 
-<img src="assets/quad.png" alt="Banner" style="width: 100%; height: 300px; object-fit: cover; object-position: center;" />
+![Banner](assets/quad.png)
 
 Spatial indexing system for efficiently rendering large-scale galaxy maps with dynamic level-of-detail.
 
