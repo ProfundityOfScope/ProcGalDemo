@@ -9,8 +9,8 @@ are nearly 'now', the rim is deep past. Because the Chronicle is a pure
 function of (seed, time), asking about the past costs the same as asking
 about the present. No history is stored; it is re-derived on demand.
 
-Run from the directory containing galaxy/:
-    python -m galaxy.observer
+Run from the repo root:
+    python -m chronicle.observer
 
 Things to tweak at the bottom: SHIP frac/angle, OBS_TIME, the era of the
 comparison. The demo auto-places the ship far from the Lattice's failure
@@ -32,12 +32,13 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from .config import GALAXY_R
-from .density import Vec
+from .core import Vec
+from .core.config import GALAXY_R
+from .core.stars import stars_in_tile, tile_range
 from .plot import draw_civ, iter_civs_via_cells
 from .query import tier0_registry
-from .stars import stars_in_tile, tile_range
-from .tier0 import Custodian, Lattice
+from .ruins import AUTHORED_RUINS
+from .tiers.tier0 import AUTHORED, Custodian, Lattice
 
 C: float = 1.0   # ly / yr. The constant the whole game is about.
 
@@ -106,6 +107,8 @@ def plot_chronicle(ax: plt.Axes, t: float, tier0: list,
             _draw_lattice(ax, e, node_time=lambda p: t)
     for c in iter_civs_via_cells(t):
         draw_civ(ax, c, t, inflate)
+    for r in AUTHORED_RUINS:
+        draw_civ(ax, r, t, inflate)
 
 
 def plot_lightcone(ax: plt.Axes, ship: Vec, t: float, tier0: list,
@@ -124,6 +127,8 @@ def plot_lightcone(ax: plt.Axes, ship: Vec, t: float, tier0: list,
     max_delay = 150_000 # manually set obviously
     for c in iter_civs_via_cells(t, extra_lookback=max_delay):
         draw_civ(ax, c, retarded_time(c.home, ship, t), inflate)
+    for r in AUTHORED_RUINS:
+        draw_civ(ax, r, retarded_time(r.home, ship, t), inflate)
 
     # lookback rings: everything on a ring is seen at the same moment
     for frac in (0.25, 0.5, 0.75, 1.0):
@@ -157,7 +162,7 @@ def compare_figure(ship: Vec, t: float, out_path: str,
 
 def print_disagreements(ship: Vec, t: float) -> None:
     """Where the god view and the ship's sky disagree, entity by entity."""
-    lat = next(e for e in tier0_registry() if isinstance(e, Lattice))
+    lat = next(e for e in AUTHORED if isinstance(e, Lattice))
     print(f"Ship at ({ship[0]:,.0f}, {ship[1]:,.0f}), t = {t:,.0f}")
     print(f"{'relay':>8} {'dist (ly)':>10} {'sees yr':>12} "
           f"{'IS':>6} {'APPEARS':>8}")
@@ -180,7 +185,7 @@ def print_disagreements(ship: Vec, t: float) -> None:
 if __name__ == "__main__":
     # Ship placement: far side of the disk from the Lattice failure origin,
     # to maximize how out-of-date its news about the collapse is. Tweak me.
-    lat = next(e for e in tier0_registry() if isinstance(e, Lattice))
+    lat = next(e for e in AUTHORED if isinstance(e, Lattice))
     ox, oy = lat.fail_origin
     norm = math.hypot(ox, oy)
     SHIP: Vec = (-ox / norm * 0.8 * GALAXY_R, -oy / norm * 0.8 * GALAXY_R)
@@ -193,4 +198,4 @@ if __name__ == "__main__":
 
     print_disagreements(SHIP, OBS_TIME)
     compare_figure(SHIP, OBS_TIME,
-                   "/mnt/user-data/outputs/lightcone_vs_chronicle.png")
+                   "outputs/lightcone_vs_chronicle.py")

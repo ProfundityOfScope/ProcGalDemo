@@ -11,19 +11,20 @@ pattern (the strongholds / mineshafts / dripstone lesson):
 import math
 from functools import lru_cache
 
-from .config import (CIV_CELL, CIV_DECAY_TAU, CIV_LIFESPAN,
-                     CIV_R_MAX, CIV_SPEED, CLUSTER_CELL, CLUSTER_DECAY_TAU,
-                     CLUSTER_DENSITY_GATE, CLUSTER_LIFESPAN,
-                     CLUSTER_R_MAX, CLUSTER_R_PER_DENSITY, CLUSTER_SPEED,
-                     GALAXY_R, GP_DECAY_TAU, GP_LIFESPAN, GP_R_MAX,
-                     GP_RINGS, GP_SPEED, EPOCH_LEN, CIV_RATE_PER_EPOCH,
-                     CIV_LOOKBACK, SALIENCE_CUTOFF, CLUSTER_RATE_PER_EPOCH,
-                     GP_RATE_PER_EPOCH, GP_LOOKBACK, CLUSTER_LOOKBACK)
-from .density import Vec, stellar_density
-from .era import era_curve
-from .lifecycle import Civ, Lifecycle
-from .rng import sub_rng
-from .stars import nearest_star
+from ..core import Vec, era_curve
+from ..core.config import (CIV_CELL, CIV_DECAY_TAU, CIV_LIFESPAN,
+                           CIV_R_MAX, CIV_SPEED, CLUSTER_CELL, CLUSTER_DECAY_TAU,
+                           CLUSTER_DENSITY_GATE, CLUSTER_LIFESPAN,
+                           CLUSTER_R_MAX, CLUSTER_R_PER_DENSITY, CLUSTER_SPEED,
+                           GALAXY_R, GP_DECAY_TAU, GP_LIFESPAN, GP_R_MAX,
+                           GP_RINGS, GP_SPEED, EPOCH_LEN, CIV_RATE_PER_EPOCH,
+                           CIV_LOOKBACK, SALIENCE_CUTOFF, CLUSTER_RATE_PER_EPOCH,
+                           GP_RATE_PER_EPOCH, GP_LOOKBACK, CLUSTER_LOOKBACK)
+from ..core.density import stellar_density
+from ..core.rng import sub_rng
+from ..core.stars import nearest_star
+from ..lifecycle import (CLUSTER_LEAGUE_PROFILE, GREAT_POWER_PROFILE,
+                         MINOR_CIV_PROFILE, Civ, Lifecycle, roll_recipe)
 
 # ----------------------------------------------------------------------
 # Helpers!
@@ -61,18 +62,23 @@ def great_powers_in_cell(e: int) -> tuple[Civ, ...]:
         ang = base_angle + i * 2 * math.pi / n + rng.normal(0, 0.15)
         rad = base_rad_frac * GALAXY_R * rng.uniform(0.85, 1.15)
         _, home = nearest_star((rad * math.cos(ang), rad * math.sin(ang)))
+        recipe = roll_recipe(rng, GREAT_POWER_PROFILE)
         life = Lifecycle(
             birth=birth,
             expansion_speed=rng.uniform(*GP_SPEED),
-            max_radius=rng.uniform(GP_R_MAX),
+            max_radius=min(GP_R_MAX, rng.uniform(100, GP_R_MAX)),
             lifespan=rng.uniform(*GP_LIFESPAN),
             decay_tau=GP_DECAY_TAU,
+            growth_kind=recipe.growth_kind, life_kind=recipe.life_kind,
+            death_kind=recipe.death_kind, life_param=recipe.life_param,
+            life_cycles=recipe.life_cycles,
         )
         civs.append(Civ(
             name=f"Great Power R{base_rad_frac}-{i}", kind="stronghold-style",
             home=home, life=life,
             genome={"aggression": round(float(rng.random()), 2),
-                    "aesthetic_seed": int(rng.integers(1e9))},
+                    "aesthetic_seed": int(rng.integers(1_000_000_000)),
+                    "life_arc": f"{recipe.growth_kind}/{recipe.life_kind}/{recipe.death_kind}"},
         ))
     return tuple(civs)
 
@@ -111,17 +117,22 @@ def minor_civs_in_cell(cx: int, cy: int, e: int) -> tuple[Civ, ...]:
         if math.hypot(p[0], p[1]) > GALAXY_R:
             continue
         _, home = nearest_star(p)
+        recipe = roll_recipe(rng, MINOR_CIV_PROFILE)
         life = Lifecycle(
             birth=birth,
             expansion_speed=rng.uniform(*CIV_SPEED),
             max_radius=min(CIV_R_MAX, rng.uniform(100.0, CIV_R_MAX)),
             lifespan=rng.uniform(*CIV_LIFESPAN),
             decay_tau=CIV_DECAY_TAU,
+            growth_kind=recipe.growth_kind, life_kind=recipe.life_kind,
+            death_kind=recipe.death_kind, life_param=recipe.life_param,
+            life_cycles=recipe.life_cycles,
         )
         civs.append(Civ(
             name=f"Minor {cx:+d}{cy:+d}.{i}", kind="mineshaft-style",
             home=home, life=life,
-            genome={"aggression": round(float(rng.random()), 2)},
+            genome={"aggression": round(float(rng.random()), 2),
+                    "life_arc": f"{recipe.growth_kind}/{recipe.life_kind}/{recipe.death_kind}"},
         ))
     return tuple(civs)
 
@@ -167,17 +178,22 @@ def cluster_leagues_in_cell(cx: int, cy: int, e: int) -> tuple[Civ, ...]:
         if local < CLUSTER_DENSITY_GATE or math.hypot(p[0], p[1]) > GALAXY_R:
             continue
         _, home = nearest_star(p)
+        recipe = roll_recipe(rng, CLUSTER_LEAGUE_PROFILE)
         life = Lifecycle(
             birth=birth,
             expansion_speed=rng.uniform(*CLUSTER_SPEED),
             max_radius=min(CLUSTER_R_MAX, local * CLUSTER_R_PER_DENSITY),
             lifespan=rng.uniform(*CLUSTER_LIFESPAN),
             decay_tau=CLUSTER_DECAY_TAU,
+            growth_kind=recipe.growth_kind, life_kind=recipe.life_kind,
+            death_kind=recipe.death_kind, life_param=recipe.life_param,
+            life_cycles=recipe.life_cycles,
         )
         civs.append(Civ(
             name=f"Cluster League {cx:+d}{cy:+d}.{i}", kind="dripstone-style",
             home=home, life=life,
-            genome={"density_at_birth": round(local, 2)},
+            genome={"density_at_birth": round(local, 2),
+                    "life_arc": f"{recipe.growth_kind}/{recipe.life_kind}/{recipe.death_kind}"},
         ))
     return tuple(civs)
 

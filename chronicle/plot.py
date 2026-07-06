@@ -14,22 +14,28 @@ import math
 
 import matplotlib.pyplot as plt
 
-from .config import CIV_CELL, CLUSTER_CELL, GALAXY_R, SALIENCE_CUTOFF, CIV_LOOKBACK, CLUSTER_LOOKBACK, GP_LOOKBACK
-from .lifecycle import Civ
-from .stars import stars_in_tile, tile_range
-from .tier0 import Custodian, Lattice
-from .tier1 import cluster_leagues_in_cell, great_powers, minor_civs_in_cell, epoch_window
+from .core.config import CIV_CELL, CLUSTER_CELL, GALAXY_R, SALIENCE_CUTOFF, CIV_LOOKBACK, CLUSTER_LOOKBACK, GP_LOOKBACK
+from .core.stars import stars_in_tile, tile_range
+from .lifecycle import Civ, Ruin
+from .ruins import AUTHORED_RUINS
+from .tiers.tier0 import Custodian, Lattice
+from .tiers.tier1 import cluster_leagues_in_cell, great_powers_in_cell, minor_civs_in_cell, epoch_window
 
 KIND_COLOR: dict[str, str] = {
     "stronghold-style": "#ff5f5f",
     "mineshaft-style": "#5fb0ff",
     "dripstone-style": "#ffd75f",
 }
+DEFAULT_KIND_COLOR = "#c8c8c8"  # fallback for kinds not in the table above
+                                # (instant ruins, and anything else added later)
 
 
-def draw_civ(ax: plt.Axes, c: Civ, t_eval: float, inflate: float = 8.0) -> None:
-    """The one civ renderer, shared by the Chronicle and the Lightcone
-    (callers differ only in what time they pass: coordinate or retarded).
+def draw_civ(ax: plt.Axes, c: "Civ | Ruin", t_eval: float, inflate: float = 8.0) -> None:
+    """The one civ (and Ruin) renderer, shared by the Chronicle and the
+    Lightcone (callers differ only in what time they pass: coordinate or
+    retarded). Works for anything exposing `.home`/`.life` -- a `Ruin`
+    has no `.kind`, so it just falls through to DEFAULT_KIND_COLOR,
+    which reads as a fitting ash-gray for "history, not a going concern".
 
     Living envelope: filled circle at radius(t).
     Ruins: dashed ring at visible_ruin_radius(t) -- the erosion frontier.
@@ -39,10 +45,12 @@ def draw_civ(ax: plt.Axes, c: Civ, t_eval: float, inflate: float = 8.0) -> None:
     inside a growing-then-eroding ring of abandonment."""
     r_live = c.life.radius(t_eval)
     if r_live > 0:
+        kind = getattr(c, "kind", None)
+        color = DEFAULT_KIND_COLOR if kind is None else KIND_COLOR.get(kind, DEFAULT_KIND_COLOR)
         ax.add_patch(plt.Circle(c.home, r_live * inflate, fill=True,
-                                alpha=0.10, fc=KIND_COLOR[c.kind]))
+                                alpha=0.10, fc=color))
         ax.add_patch(plt.Circle(c.home, r_live * inflate, fill=False,
-                                lw=1.1, ec=KIND_COLOR[c.kind], alpha=0.9))
+                                lw=1.1, ec=color, alpha=0.9))
     r_vis = c.life.visible_ruin_radius(t_eval, SALIENCE_CUTOFF)
     if r_vis > r_live:
         mid_d = 0.5 * (r_live + r_vis)
@@ -64,7 +72,7 @@ def iter_civs_via_cells(t: float, extra_lookback: float = 0.0) -> list[Civ]:
     
     civs: list[Civ] = []
     for e in epoch_window(t, GP_LOOKBACK):
-        civs.extend(great_powers(e))
+        civs.extend(great_powers_in_cell(e))
         
     for cx, cy in _all_cells(CIV_CELL):
         for e in epoch_window(t, CIV_LOOKBACK):
@@ -116,6 +124,10 @@ def plot_era(ax: plt.Axes, t: float, tier0: list, inflate: float = 8.0) -> None:
     # tier 1 (radii inflated for display only)
     for c in iter_civs_via_cells(t):
         draw_civ(ax, c, t, inflate)
+
+    # authored instant ruins (no living phase, ever -- see ruins.py)
+    for r in AUTHORED_RUINS:
+        draw_civ(ax, r, t, inflate)
 
     ax.set_title(f"t = {t:,.0f} yr", color="#e6e6e6", fontsize=13)
     lim = GALAXY_R * 1.05

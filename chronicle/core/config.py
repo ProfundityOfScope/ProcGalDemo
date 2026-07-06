@@ -59,11 +59,8 @@ CUSTODIAN_RADIUS: tuple[float, float] = (0.12 * GALAXY_R, 0.22 * GALAXY_R)
 LATTICE_BAND: tuple[float, float] = (0.30 * GALAXY_R, 0.80 * GALAXY_R)
 LATTICE_NODES: int = 12
 LATTICE_SPACING: float = 0.08 * GALAXY_R   # min anchor separation
-LATTICE_FAIL_TIME: float = 1_000_000.0     # first node goes dark
-LATTICE_FAIL_SPEED: float = 0.1            # collapse wave, ly/yr\
-    
-TIER0_BLOCK: float = 100_000_000.0 # coarse temporary block for mythic spawns
-TIER0_RATE_PER_GYR: float = 4.0 # expected permanents per Gyr at era-curve 1.0
+LATTICE_FAIL_TIME: float = T_PRESENT     # first node goes dark
+LATTICE_FAIL_SPEED: float = 0.1            # collapse wave, ly/yr
 
 # ---------------------------------------------------------------- lookbacks
 def _lookback(lifespan_max: float, tau: float) -> float:

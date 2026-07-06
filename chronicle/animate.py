@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Render the galaxy's history as an mp4 (or gif fallback).
 
-Run from the directory containing galaxy/:
-    python -m galaxy.animate
+Run from the repo root:
+    python -m chronicle.animate
 
 How it works: FuncAnimation calls update(i) once per frame; update clears
 the axes and redraws that moment with the same plot_era you've been using.
@@ -21,7 +21,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
-from .config import T_PRESENT
+from .core.config import T_PRESENT
 from .plot import plot_era
 from .query import tier0_registry
 
@@ -29,10 +29,10 @@ from .query import tier0_registry
 N_FRAMES: int = 300     # 300 @ 30fps = 10s. At 100 frames, short-lived minor
                         # civs (5-40 kyr) blink in/out in 1-2 frames; ~300+
                         # frames over 2 Myr makes their rise/fall readable.
-FPS: int = 30
+FPS: int = 5
 DPI: int = 110
-T_START: float = T_PRESENT - 5e5
-T_END: float = T_PRESENT + 5e5
+T_START: float = T_PRESENT - 1e6
+T_END: float = T_PRESENT + 1e6
 INFLATE: float = 8.0
 OUT_STEM: str = "outputs/galaxy_history"
 
@@ -70,6 +70,7 @@ def save(anim: animation.FuncAnimation, fig: plt.Figure, stem: str = OUT_STEM) -
 
 
 if __name__ == "__main__":
+    print(N_FRAMES, 'at', FPS, 'fps')
     fig, anim = make_animation()
     out = save(anim, fig)
     print(f"Saved -> {out}")
