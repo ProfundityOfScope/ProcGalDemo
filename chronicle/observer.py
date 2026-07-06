@@ -33,7 +33,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from .core import Vec
-from .core.config import GALAXY_R
+from .core.config import GALAXY_R, T_PRESENT
 from .core.stars import stars_in_tile, tile_range
 from .plot import draw_civ, iter_civs_via_cells
 from .query import tier0_registry
@@ -190,12 +190,8 @@ if __name__ == "__main__":
     norm = math.hypot(ox, oy)
     SHIP: Vec = (-ox / norm * 0.8 * GALAXY_R, -oy / norm * 0.8 * GALAXY_R)
 
-    OBS_TIME: float = 1_500_000.0   # mid-collapse, max drama: several
-                                    # relays are dead but their light
-                                    # hasn't reached the ship yet. Try
-                                    # other values (or T_NOW) and watch
-                                    # the two panels converge/diverge.
+    OBS_TIME: float = T_PRESENT + 3e5
 
     print_disagreements(SHIP, OBS_TIME)
     compare_figure(SHIP, OBS_TIME,
-                   "outputs/lightcone_vs_chronicle.py")
+                   "outputs/lightcone_vs_chronicle.png")

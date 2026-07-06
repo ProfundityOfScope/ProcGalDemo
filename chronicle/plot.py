@@ -60,6 +60,62 @@ def draw_civ(ax: plt.Axes, c: "Civ | Ruin", t_eval: float, inflate: float = 8.0)
                                 alpha=0.15 + 0.55 * sal))
 
 
+KIND_ABBR: dict[str, str] = {
+    "stronghold-style": "GP",
+    "mineshaft-style": "Min",
+    "dripstone-style": "Cl",
+}
+
+
+def _short_name(name: str) -> str:
+    """Drop the redundant type prefix -- the abbreviated tag already
+    says what it is."""
+    for prefix in ("Great Power ", "Cluster League ", "Minor "):
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    return name
+
+
+def draw_event_key(ax: plt.Axes, t: float, tier0: list, max_lines: int = 16) -> None:
+    """Abbreviated 'what's ongoing right now' key: tag + name + stage
+    for every currently-relevant Event. An entry simply stops appearing
+    once its status is no longer relevant (living, or ruins still above
+    the salience cutoff) -- same rule the query layer uses, not a
+    separate concept. Overlaid directly on the main plot's top-left
+    corner (same axes, drawn after the galaxy) rather than a separate
+    panel -- a bit of overlap with the star field is fine, and it keeps
+    the whole frame square instead of splitting it into columns."""
+    lines: list[str] = ["ONGOING", ""]
+    for entity in tier0:
+        if isinstance(entity, Custodian):
+            lines.append("Myth  Custodian: dormant")
+        elif isinstance(entity, Lattice):
+            alive = sum(1 for _, p in entity.anchors if t < entity.dark_time(p))
+            lines.append(f"Myth  Lattice: {alive}/{len(entity.anchors)} live")
+    lines.append("")
+
+    entries: list[tuple[str, str, str]] = []
+    for c in iter_civs_via_cells(t):
+        tag = KIND_ABBR.get(c.kind, "?")
+        entries.append((tag, _short_name(c.name), c.life.status(t)))
+    for r in AUTHORED_RUINS:
+        if r.ruin_salience(r.home, t) >= SALIENCE_CUTOFF:
+            entries.append(("Ru", _short_name(r.name), "RUINS"))
+    entries.sort(key=lambda e: (e[0], e[1]))   # stable-ish order frame to frame
+
+    shown, extra = entries[:max_lines], entries[max_lines:]
+    for tag, name, status in shown:
+        lines.append(f"{tag:<4} {name}: {status}")
+    if extra:
+        lines.append(f"...+{len(extra)} more")
+    if not entries:
+        lines.append("(quiet)")
+
+    ax.text(0.02, 0.98, "\n".join(lines), transform=ax.transAxes,
+           ha="left", va="top", color="#c8d0e0", fontsize=7.5,
+           family="monospace", linespacing=1.7)
+
+
 def _all_cells(cell: float) -> list[tuple[int, int]]:
     n = int(math.ceil(GALAXY_R / cell))
     return [(cx, cy) for cx in range(-n, n) for cy in range(-n, n)]
@@ -130,7 +186,7 @@ def plot_era(ax: plt.Axes, t: float, tier0: list, inflate: float = 8.0) -> None:
         draw_civ(ax, r, t, inflate)
 
     ax.set_title(f"t = {t:,.0f} yr", color="#e6e6e6", fontsize=13)
-    lim = GALAXY_R * 1.05
+    lim = GALAXY_R * 1.02
     ax.set_xlim(-lim, lim)
     ax.set_ylim(-lim, lim)
     ax.set_aspect("equal")

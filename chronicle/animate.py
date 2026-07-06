@@ -22,17 +22,15 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 
 from .core.config import T_PRESENT
-from .plot import plot_era
+from .plot import draw_event_key, plot_era
 from .query import tier0_registry
 
 # ------------------------------------------------------------------ knobs
-N_FRAMES: int = 300     # 300 @ 30fps = 10s. At 100 frames, short-lived minor
-                        # civs (5-40 kyr) blink in/out in 1-2 frames; ~300+
-                        # frames over 2 Myr makes their rise/fall readable.
-FPS: int = 5
-DPI: int = 110
-T_START: float = T_PRESENT - 1e6
-T_END: float = T_PRESENT + 1e6
+N_FRAMES: int = 1800
+FPS: int = 30
+DPI: int = 144
+T_START: float = T_PRESENT - 5e5
+T_END: float = T_PRESENT + 5e5
 INFLATE: float = 8.0
 OUT_STEM: str = "outputs/galaxy_history"
 
@@ -43,11 +41,14 @@ def make_animation(n_frames: int = N_FRAMES,
     tier0 = tier0_registry()
     times = np.linspace(t_start, t_end, n_frames)
 
-    fig, ax = plt.subplots(figsize=(9, 9), facecolor="#0b0e14")
+    fig, ax = plt.subplots(figsize=(10, 10), facecolor="#0b0e14")
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.96, bottom=0.01)
 
     def update(i: int) -> list:
         ax.clear()                      # wipes titles/limits too;
-        plot_era(ax, float(times[i]), tier0, inflate=INFLATE)   # ...plot_era resets all of it
+        t = float(times[i])
+        plot_era(ax, t, tier0, inflate=INFLATE)   # ...plot_era resets all of it
+        draw_event_key(ax, t, tier0)     # overlaid on top, top-left corner
         return []
 
     anim = animation.FuncAnimation(fig, update, frames=n_frames, interval=1000 / FPS)
