@@ -324,6 +324,7 @@ class QuadNode:
         if max_depth is not None and self.depth >= max_depth:
             should_stop = True
             
+        # if self.depth >= max_depth or 
         if should_stop:
             self.children = None
             return
